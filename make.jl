@@ -4,6 +4,7 @@ makedocs(;
     sitename="HorseBlog",
     pages = [
         "Home" => "index.md"
+    ]
 )
 
 deploydocs(
