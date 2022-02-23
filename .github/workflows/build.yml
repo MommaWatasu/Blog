@@ -13,8 +13,9 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build Document
         run: |
-                using Pkg
-                Pkg.activate(".")
-                Pkg.add("Documenter")
-                include("make.jl")
-        shell: julia --color=yes {0}
+                julia --color=yes -e '
+                        using Pkg;
+                        Pkg.activate(".")
+                        Pkg.add("Documenter")
+                        include("make.jl")
+                        '
