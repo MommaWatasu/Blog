@@ -19,3 +19,6 @@ jobs:
                         Pkg.add("Documenter")
                         include("make.jl")
                         '
+        env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                DOCUMENTER_KEY: ${{ secrets.GITHUB_TOKEN }}
