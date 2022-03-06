@@ -5,8 +5,12 @@ makedocs(;
     pages = [
         "Home" => "index.md",
         "FreeCraft" => [
-            "最初に" => "FreeCraft/index.html",
+            "最初に" => "FreeCraft/index.md",
             "1回目" => "FreeCraft/1st.md"
+        ],
+        "HorseOS" => [
+            "HorseOSとは" => "HorseOS/index.md",
+            "マウスを動かす" => "HorseOS/mouse.md"
         ]
     ]
 )
