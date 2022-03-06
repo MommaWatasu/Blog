@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>マウスを動かす · HorseBlog</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">HorseBlog</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">FreeCraft</span><ul><li><a class="tocitem" href="../../FreeCraft/">最初に</a></li><li><a class="tocitem" href="../../FreeCraft/1st/">1回目</a></li></ul></li><li><span class="tocitem">HorseOS</span><ul><li><a class="tocitem" href="../">HorseOSとは</a></li><li class="is-active"><a class="tocitem" href>マウスを動かす</a><ul class="internal"><li><a class="tocitem" href="#Hello-World"><span>Hello World</span></a></li><li><a class="tocitem" href="#カーネルを呼び出してみよう"><span>カーネルを呼び出してみよう</span></a></li><li><a class="tocitem" href="#マウスを動かそう"><span>マウスを動かそう</span></a></li><li><a class="tocitem" href="#おまけ"><span>おまけ</span></a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">HorseOS</a></li><li class="is-active"><a href>マウスを動かす</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>マウスを動かす</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/MommaWatasu/Blog/blob/master/src/HorseOS/mouse.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="マウスを動かすまで"><a class="docs-heading-anchor" href="#マウスを動かすまで">マウスを動かすまで</a><a id="マウスを動かすまで-1"></a><a class="docs-heading-anchor-permalink" href="#マウスを動かすまで" title="Permalink"></a></h1><p>Mikan本持ってない方でもわかるようHello Worldは書いておきます。</p><p>まず、「OSを作る」と言われても、どう動くものかイメージがつかないとやってられないと思います。大雑把な流れとしては、</p><ul><li>BIOSがIPL(Initial Program Loader)を呼び出す。こいつはUSBメモリの中の<code>/EFI/BOOT/BOOTX64.efi</code>であることになってる。</li><li>IPLがUEFIのboot service(標準出力などを一時的に提供してくれる)を使ってメモリマップの書き込みを行う</li><li>IPLからカーネルを呼び出す。このときUEFIは邪魔にならないよう切っておく。</li><li>カーネルが動き始める。</li></ul><p>といった感じです。Hello Worldやったあとは、ちょっと長くなる（そしてIntelのおじさんが決めたからシリーズ）ので、マウスを動かすまで若干省きます。</p><h2 id="Hello-World"><a class="docs-heading-anchor" href="#Hello-World">Hello World</a><a id="Hello-World-1"></a><a class="docs-heading-anchor-permalink" href="#Hello-World" title="Permalink"></a></h2><h3 id="準備"><a class="docs-heading-anchor" href="#準備">準備</a><a id="準備-1"></a><a class="docs-heading-anchor-permalink" href="#準備" title="Permalink"></a></h3><p>Hello Worldするのにも準備が必要です（なんだかんだここが一番つまんない気がします）。 まず、Rustの最新バージョンを使う必要があるので、<code>rustup default nightly</code>しておきます。 そして、リンクにLLVMが後々必要になるので入れちゃいます。</p><pre><code class="nohighlight hljs">$ sudo apt install lld</code></pre><p>テスト環境としてQEMUを使いたいので、インストールします。</p><pre><code class="nohighlight hljs">$ sudo apt install qemu
+$ sudo apt install qemu-utils
+$ sudo apt install qemu-system-x86</code></pre><p>更に、QEMUを動かすのにOVFMなるファイルが必要になるのですが、面倒くさいので僕のリポジトリの<code>/dev-tools</code>から持ってきてください（両方です）。</p><p>また、Rustも発達途中で、いろいろエラーが出るかもしれませんが、そのときはコンパイラの<code>note</code>やら<code>help</code>を見ましょう。Rustのコンパイラは本当に親切です。</p><h3 id="IPL"><a class="docs-heading-anchor" href="#IPL">IPL</a><a id="IPL-1"></a><a class="docs-heading-anchor-permalink" href="#IPL" title="Permalink"></a></h3><p>準備は先ほどしたんですが、Cargoの設定はまだ残っています。 まずプロジェクトを作って</p><pre><code class="nohighlight hljs">$ cargo new [ブートローダのプロジェクト名] -bin</code></pre><p>Cargo.tomlをこんな感じに（適宜読み変えてください）します。</p><pre><code class="nohighlight hljs">[package]
+name = &quot;horse-bootloader&quot;
+version = &quot;0.1.0&quot;
+edition = &quot;2021&quot;
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+uefi = { version = &quot;0.10.0&quot;, features = [&quot;exts&quot;, &quot;alloc&quot;, &quot;logger&quot;] }
+log = { version = &quot;0.4.11&quot;, default-features = false }
+elf_rs = &quot;0.1&quot;</code></pre><p>更に<code>.cargo/config.toml</code>をこんな感じで</p><pre><code class="nohighlight hljs">[build]
+target = &quot;x86_64-unknown-uefi&quot;
+
+[unstable]
+build-std = [&quot;core&quot;, &quot;alloc&quot;, &quot;compiler_builtins&quot;]
+build-std-features = [&quot;compiler-builtins-mem&quot;]</code></pre><p>これでやっと本題です。IPLのプログラム(<code>src/main.rs</code>)をこんな感じで書いてください</p><pre><code class="nohighlight hljs">#![feature(abi_efiapi)]
+#![feature(alloc_error_handler)]
+#![no_std]
+#![no_main]
+
+#[macro_use]
+extern crate alloc;
+use alloc::string::ToString;
+use core::arch::asm;
+use console::gop;
+use log;
+use core::fmt::Write;
+use elf_rs::*;
+use proto::console;
+use uefi::{
+    prelude::*,
+    proto::{self, console::gop::GraphicsOutput, media::fs::SimpleFileSystem},
+    table::boot::{EventType, MemoryDescriptor, Tpl},
+};
+use uefi::{
+    proto::media::file::{File, FileAttribute, FileInfo, FileMode, FileType::Regular},
+    table::boot::{AllocateType, MemoryType},
+};
+
+static mut LOGGER: Option&lt;uefi::logger::Logger&gt; = None
+
+#[entry]
+fn efi_main(handle: Handle, st: SystemTable&lt;Boot&gt;) -&gt; Status {
+    let bt = st.boot_services();
+    let stdout = st.stdout();
+    
+    writeln!(stdout, &quot;booting HorseOS...&quot;).unwrap();
+}</code></pre><p>これで</p><pre><code class="nohighlight hljs">$ cargo build</code></pre><p>して、<code>target/x86_64-unkown-uefi/debug</code>からEFIファイルを持ってきます。 ここから黙々とコマンドを叩いていけばHello Worldと出会えるはず。。。（だめだったらここは他のサイト見てください、だいぶ立ってから書いてるので記憶が薄れてるので）</p><pre><code class="nohighlight hljs">$ qemu-img create -f raw disk.iso 200M
+$ mkfs.fat -n &#39;HORSE OS&#39; -s 2 -f 2 -R 32 -F 32
+$ mkdir -p mnt
+$ sudo mount -o loop disk.iso mnt
+$ sudo mkdir -p mnt/EFI/BOOT
+$ sudo cp bootloader.efi  mnt/EFI/BOOT/BOOTX64.EFI
+$ sudo umount mnt
+$ qemu-system-x86_64 \
+    -m 1G \
+    -drive if=pflash,format=raw,readonly,file=./dev-tools/OVMF/OVMF_CODE.fd \
+    -drive if=pflash,format=raw,file=./dev-tools/OVMF/OVMF_VARS.fd \
+    -drive if=ide,index=0,media=disk,format=raw,file=disk.iso \
+    -device nec-usb-xhci,id=xhci \
+    -device usb-mouse -device usb-kbd \
+    -monitor stdio \</code></pre><p>ふう、こんな画面が見えましたか？ <img src="../../assets/Horse-1.png" alt="Hello World"/> まあ、ここは感動するための手続きみたいなもんなので、駄目なら駄目でさっさと次に進んでしまいましょう。 なお、僕のようにお馬鹿な人ばかりではないと思いますが、QEMUの画面でマウスをキャプチャして「抜け出せない！」などとならないようにしましょう、ダサすぎるので。Windowのタイトルに書いてありますが、<code>Ctrl+Alt+G</code>で抜けられます。</p><h2 id="カーネルを呼び出してみよう"><a class="docs-heading-anchor" href="#カーネルを呼び出してみよう">カーネルを呼び出してみよう</a><a id="カーネルを呼び出してみよう-1"></a><a class="docs-heading-anchor-permalink" href="#カーネルを呼び出してみよう" title="Permalink"></a></h2><p>面倒くさいのでIPLの詳細は省きます。興味のある人はコードを読んだり他のサイトを探してください（カーネル本体書き始めるまではほんとにやるだけです）。 というわけでIPLを<a href="https://github.com/MommaWatasu/Horse/blob/master/bootloader/src/main.rs">僕のリポジトリ</a>から引っ張って来て、魔改造してあげましょう。</p><p>そして、カーネルのテンプレも作りましょう（OSの名前はよく考えましょう、愛着の湧くように）。</p><pre><code class="nohighlight hljs">$ cargo new [OSの名前] -bin</code></pre><p>そして、カーネルのビルドはIPLよりひと手間増えます。僕のリポジトリから<a href="https://github.com/MommaWatasu/Horse/blob/master/kernel/x86_64-unknown-none-horsekernel.json">ターゲットファイル</a>を取って来て、プロジェクト直下に置いといてください。 そしてCargo.tomlを</p><pre><code class="nohighlight hljs">[package]
+name = &quot;horse-kernel&quot;
+version = &quot;0.1.0&quot;
+edition = &quot;2021&quot;
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+x86_64 = &quot;0.14.1&quot;
+spin = { version = &quot;0.9.0&quot;, features = [&quot;lock_api&quot;, &quot;mutex&quot;] }
+
+[profile.dev]
+panic=&quot;abort&quot;</code></pre><p><code>.cargo/config.toml</code>を</p><pre><code class="nohighlight hljs">[build]
+target = &quot;x86_64-unknown-none-horsekernel.json&quot;
+
+[unstable]
+build-std = [&quot;core&quot;, &quot;compiler_builtins&quot;]
+build-std-features = [&quot;compiler-builtins-mem&quot;]</code></pre><p>こうして準備完了です。<code>src/main.rs</code>にカーネルの土台を書きます。</p><pre><code class="nohighlight hljs">#![no_std]
+#![no_main]
+#![feature(abi_efiapi)]
+
+#[no_mangle]
+extern &quot;sysv64&quot; fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) -&gt; ! {
+    loop {
+        unsafe {
+            asm!(&quot;hlt&quot;)
+        }
+    }
+}</code></pre><p>とりあえずCPUを休ませるだけですが、ひとつだけ説明する必要があるのは、<code>extern &quot;sysv64&quot;</code>ですが、Rustでプログラムを書くと、余計な情報がついてしまうようで、そのままだとIPLが上手くこの関数を呼び出せません、そこで、Cのように不要なものの内容にするために指定しています。 このあとプログラムを読めば解ると思いますが、ところどころCに合わせるために細工がされています。</p><h2 id="マウスを動かそう"><a class="docs-heading-anchor" href="#マウスを動かそう">マウスを動かそう</a><a id="マウスを動かそう-1"></a><a class="docs-heading-anchor-permalink" href="#マウスを動かそう" title="Permalink"></a></h2><p>マウスを動かすまでにいろいろあるんですが、こういう技術的な解説を書こうとするとまさにMikan本のようなものすごく長いものになってしまうので、大幅カットで一気にマウスを動かすところまで行きます。 で、ちょっとこっから先はコードが長いので、GitHubからcloneしてください。</p><pre><code class="nohighlight hljs">$ git clone https://github.com/MommaWatasu/Horse.git</code></pre><p>そして、マウスを動かすためにチェックアウトします。</p><pre><code class="nohighlight hljs">$ git checkout ba6648e</code></pre><p>だいぶいろいろ追加されてますが、だいたいこんなものが追加されてます。</p><ul><li>dev-tools: ビルド関係のファイル</li><li>Makefile.toml: Cargo-makeの設定ファイル、こいつのおかげであの冗長なコマンドを打たなくて済む。入れてない人はCargo-makeを入れておきましょう。</li><li>kernel: カーネルとその他愉快な仲間たち(usbディレクトリにUSB ホストドライバが入ってます。)</li></ul><p>説明が面倒くさいのでこれ以上の説明はしませんが、なんとなく一度コードを眺めて何をしているのかぐらいは見ておいた方がいいと思います。僕も他の方のコードを眺めて大体関係性をりかいしたので。ファイル名から何やってるか察する事も多いと思いますしね。</p><p>さて、皆さんお待ちかねのマウス君とキーボード君の登場です。</p><pre><code class="nohighlight hljs">$ makers RUN</code></pre><p>するとあら不思議、マウスがちゃんと動き、キーボードも入力した文字が表示されるではありませんか！ <video src="../../assets/Horse-4.mp4" controls="true" title="Mouse and Keyboard"><a href="../../assets/Horse-4.mp4">Mouse and Keyboard</a></video> これは感動しましたよ。こういうの見ると、開発し続けるやる気が湧いてきます。 ただ、お気づきかと思いますが、マウスが端に寄せたときに隠れないなどの不自然なところはありますが、このへんは少し面倒なので後回し。</p><h2 id="おまけ"><a class="docs-heading-anchor" href="#おまけ">おまけ</a><a id="おまけ-1"></a><a class="docs-heading-anchor-permalink" href="#おまけ" title="Permalink"></a></h2><p>実機で動かしているの図、古いパソコンと古いUSBがあったらぜひやってみてください、LinuxのUSBライタでdisk.isoを書き込んで、BIOSでセキュアブートをオフにした上で起動順位さえ変えれば簡単にできます。 <img src="../../assets/Horse-2.jpg" alt="real-machine"/></p><p>XHCIの設定周りのテストをしているの図、この辺はMikan本を読みながらやれるといいです。 <img src="../../assets/Horse-3.png" alt="XHCI"/></p><p>ビルドのビフォーアフター、僕はホストドライバをmandarinOSという他の方が書いたものから取ってきたんですが（先人は偉大）、これの写経をしていて、大量のバグが出ました。前と後のスクロールバーの大きさでわかるかと思います。。。みなさんもOS作りをするときは無理そうならコピペしましょう。 <img src="../../assets/Horse-build.png" alt="build"/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« HorseOSとは</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.14 on <span class="colophon-date" title="Sunday 6 March 2022 14:01">Sunday 6 March 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
