@@ -193,7 +193,7 @@ $ git checkout ba6648e
 $ makers RUN
 ```
 するとあら不思議、マウスがちゃんと動き、キーボードも入力した文字が表示されるではありませんか！
-![Mouse and Keyboard](../assets/Horse-4.mp4)
+[Mouse and Keyboard](https://github.com/MommaWatasu/Blog/blob/master/src/assets/Horse-4.mp4)
 これは感動しましたよ。こういうの見ると、開発し続けるやる気が湧いてきます。
 ただ、お気づきかと思いますが、マウスが端に寄せたときに隠れないなどの不自然なところはありますが、このへんは少し面倒なので後回し。
 
