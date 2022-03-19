@@ -110,5 +110,25 @@ fn create_procedural_mesh(
 ```
 この関数は`position`にx座標、y座標、z座標のタプルを渡すと、指定した座標に土ブロックを表示してくれます。
 
+### テクスチャの修正
+先程のコードでブロックの描画自体はできるんですが、元画像が16ピクセルなので、テクスチャがぼやけます。では、ぼやけるのを治すのにはどうしたらいいかというと、テクスチャを読み込む際のオプションを`*.png.option`にかけるので、ここで修正するように設定しておきます。
+このようにしてください
+```
+(
+    minification_filter: Nearest,
+    magnification_filter: Nearest,
+    s_wrap_mode: Repeat,
+    t_wrap_mode: ClampToEdge,
+    anisotropy: 8.0,
+    compression: NoCompression,    
+)
+```
+このうち、
+```
+minification_filter: Nearest,
+magnification_filter: Nearest,
+```
+が重要です。これによりテクスチャを読み込むときに勝手に修正してくれます。
+
 ## 最後に
 今回はどうやってブロックを描画するのかまでを書きました。次回は今ある当たり判定の不自然さを直して、ブロックをバリエーションを増やしてそれっぽくしていこうと思います。
