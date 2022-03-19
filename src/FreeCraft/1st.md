@@ -1,8 +1,8 @@
-# FreeCraft作成一回目(2022/2/22)
+# FreeCraft作成一回目(2022/3/17)
 
 ## 準備
 まずは使う言語を決めることになるわけなんですが、まあ、ゲームなのでコンパイル言語のほうがいいだろうということで、Rustにしました（基本的にC系は好きじゃないので、勉強してないので）。
-そんで、Rustには3D描画できるライブラリというのは結構あるんですが、ゲームエンジンの中で使えるものはPistonとAmethystに絞られます。Pistonは調べてみたんですが、あまり3D描画に関するDocsが見つからなかったので、Amethystでやることにしました。それでもなかなか情報を探すのに苦労するので、参考になればと思います。
+そんで、Rustには3D描画できるライブラリというのはPiston、Amethyst、RG3Dと言った選択肢があるんですが、PistonはDocsがよくわからず、Amethsyはバグがあるのに、レポジトリが「InActivity Mainteined」となっていて、ダメそう。ということでRG3Dを使って作っていきます。
 
 ## とりあえずプロジェクトを作成
 とりあえずCargoでプロジェクトを作ります。
@@ -19,7 +19,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-amethyst = {version="0.15.0", features=["vulkan"]}
+fyrox = "0.24.0"
 ```
 そしてとりあえず`cargo build`するわけなんですが、多分一発では通りません（通ったら運が良いと思います）。
 
@@ -33,137 +33,82 @@ amethyst = {version="0.15.0", features=["vulkan"]}
 こいつはなんか大量のエラーが図れるので気が滅入りますが、こういうとてつもないエラーは最後が肝心。
 1つ目のnoteを無視して、2つ目のnoteを見てみると`cannot find ~`みたいに書いてあると思います。この`~`の部分の頭は代替`l`で始まってるんですが、この`l`のあとを`apt list | grep ~`して、`dev`ってついてる物を見つけてインストールしてやりましょう。
 
-多分ここまででAmethystのコンパイルが通るとこまでは行ったと思います。次はとりあえず3D描画します。
+多分ここまででRG3Dのコンパイルが通るとこまでは行ったと思います。次はとりあえず3D描画します。
 
-## Cubeの表示
-Minecraftの基礎であるCubeを表示してみましょう。ここで、`Amethyst 3D Example`とかって調べるんですが、公式レポにあるExampleは説明なしのコードだけでよくわかりません。
-なので、とりあえずここにコード置いて置きます。これはスケルトンなので呪文だと思っておきましょう。
+## Hello World
+じゃあRG3Dの使い方を説明しよう！ってことになるんですが、結構コードが長くてコードとともに解説するのは難しいので、大体の説明は[公式チュートリアル](https://fyrox-book.github.io/fyrox/tutorials/fps/tutorial-1/tutorial-part-1.html)を見てもらうことにして、補足的な説明をします。
+
+### ブロックを表示したい
+ブロックを表示するのには、このチュートリアルで紹介されている3Dモデルを作成して使う方法は不便です。
+チュートリアルに書いてある方法でいう「手続き型のメッシュ」を作成します（3Dモデルはプログラム上で指定するものを静的にファイルに記述していることになる）。
+ただし、注意点があります。チュートリアル通りにメッシュを作成しただけではブロックを自分が透過してしまいます。これを解決するには、ブロックのメッシュに`Collider`と呼ばれるものを設定する必要があります。これにより、メッシュに当たり判定が作られ、近づくと、カメラの`Collider`とぶつかって透過しなくなります。
+また、マイクラでは重力に従うブロックと従わないブロックがありますが、`RigidBody`にはデフォルトで重力などが働くため、外部からの力によって動かないように`RigidBodyType`として`Static`を指定してやる必要があります。
+
+ここまでの内容を考慮して、以下のような関数を作りました。
 ```
-use amethyst::{
-    assets::{AssetLoaderSystemData},
-    core::{Transform, TransformBundle},
-    renderer::{
-        plugins::{
-            RenderPbr3D,
-            RenderToWindow
-        },
-        rendy::{
-            mesh::{Normal, Position, Tangent, TexCoord},
-        },
-        light::{Light, PointLight},
-        palette::rgb::Rgb,
-        shape::Shape,
-        types::DefaultBackend,
-        Camera,
-        Material,
-        MaterialDefaults,
-        Mesh,
-        RenderingBundle
-    },
-    prelude::{
-        Builder,
-        World,
-        WorldExt
-    },
-    utils::application_root_dir,
-    Application,
-    GameData,
-    GameDataBuilder,
-    SimpleState,
-    StateData
-};
+fn create_procedural_mesh(
+    scene: &mut Scene,
+    resource_manager: &ResourceManager,
+    position: (f32, f32, f32)
+) -> Handle<Node> {
+    let mut material = Material::standard();
 
-struct FreeCraft;
-impl SimpleState for FreeCraft {
-    fn on_start(&mut self, state_data: StateData<'_, GameData<'_, '_>>) {
-        initialize_camera(state_data.world);
-        initialize_cube(state_data.world);
-        initialize_light(state_data.world);
-    }
-}
-
-fn main() -> amethyst::Result<()> {
-    // Logger
-    amethyst::start_logger(Default::default());
-
-    // assets directry
-    let app_root = application_root_dir()?;
-    let assets_dir = app_root.join("assets");
-    
-    // GameDataBuilder
-    let display_config_path = app_root.join("config/display.ron");
-    let game_data = GameDataBuilder::default()
-        .with_bundle(TransformBundle::new())?
-        .with_bundle(
-            RenderingBundle::<DefaultBackend>::new()
-                .with_plugin(
-                    RenderToWindow::from_config_path(display_config_path)?
-                        .with_clear([0.529, 0.808, 0.98, 1.0]),
-                )
-                .with_plugin(RenderPbr3D::default()),
-        )?;
-    
-    let mut game = Application::new(assets_dir, FreeCraft, game_data)?;
-    game.run();
-    
-    Ok(())
-}
-
-fn initialize_camera(world: &mut World) {
-    let mut transform = Transform::default();
-    transform.set_translation_xyz(0.0, 0.0, 10.0);
-    world.create_entity()
-        .with(Camera::standard_3d(1024.0, 768.0))
-        .with(transform)
-        .build();
-}
-
-fn initialize_cube(world: &mut World) {
-    let mesh = world.exec(|loader: AssetLoaderSystemData<'_, Mesh>| {
-        loader.load_from_data(
-            Shape::Cube
-                .generate::<(Vec<Position>, Vec<Normal>, Vec<Tangent>, Vec<TexCoord>)>(None)
-                .into(),
-            (),
+    // Material is completely optional, but here we'll demonstrate that it is possible to
+    // create procedural meshes with any material you want.
+    material
+        .set_property(
+            &ImmutableString::new("diffuseTexture"),
+            PropertyValue::Sampler {
+                value: Some(resource_manager.request_texture("assets/dirt.png")),
+                fallback: SamplerFallback::White,
+            },
         )
-    });
-
-    let material_defaults = world.read_resource::<MaterialDefaults>().0.clone();
-    let material = world.exec(|loader: AssetLoaderSystemData<'_, Material>| {
-        loader.load_from_data(
-                Material {
-                    ..material_defaults
-                },
-                (),
-            )
-        },
-    );
+        .unwrap();
     
-    let mut transform = Transform::default();
-    transform.set_translation_xyz(0.0, 0.0, 0.0);
-
-    world.create_entity()
-        .with(mesh)
-        .with(material)
-        .with(transform)
-        .build();
-}
-
-fn initialize_light(world: &mut World) {
-    let light: Light = PointLight {
-        intensity: 10.0,
-        color: Rgb::new(1.0, 1.0, 1.0),
-        ..PointLight::default()
-    }.into();
-
-    let mut transform = Transform::default();
-    transform.set_translation_xyz(5.0, 5.0, 20.0);
-
-    world
-        .create_entity()
-        .with(light)
-        .with(transform)
-        .build();
+    RigidBodyBuilder::new(
+        BaseBuilder::new()
+            .with_local_transform(
+                TransformBuilder::new()
+                    // Offset player a bit.
+                    .with_local_position(Vector3::new(position.0, position.1, position.2))
+                    .build(),
+            )
+            .with_children(&[
+                {
+                    MeshBuilder::new(
+                        BaseBuilder::new().with_local_transform(
+                            TransformBuilder::new()
+                                .with_local_position(Vector3::new(0.0, 0.0, 0.0))
+                                .build(),
+                        ),
+                    )
+                    .with_surfaces(vec![SurfaceBuilder::new(Arc::new(Mutex::new(
+                        // Our procedural mesh will have a form of squashed cube.
+                        // A mesh can have unlimited amount of surfaces.
+                        SurfaceData::make_cube(Matrix4::new_nonuniform_scaling(&Vector3::new(
+                            0.5, 0.5, 0.5
+                        ))),
+                    )))
+                        .with_material(Arc::new(Mutex::new(material)))
+                        .build()])
+                    .build(&mut scene.graph)
+                },
+                // Add capsule collider for the rigid body.
+                ColliderBuilder::new(BaseBuilder::new())
+                    .with_shape(ColliderShape::cuboid(0.25, 0.25, 0.25))
+                    .build(&mut scene.graph),
+            ]),
+    )
+    // We don't want the player to tilt.
+    .with_locked_rotations(true)
+    // We don't want the rigid body to sleep (be excluded from simulation)
+    .with_can_sleep(false)
+    // We don't want the block to move
+    .with_body_type(RigidBodyType::Static)
+    .build(&mut scene.graph)
 }
 ```
-結構長いですが、こいつを`cargo run`すれば光があたった立方体がそれっぽい背景色と共に表示されるはずです。
+この関数は`position`にx座標、y座標、z座標のタプルを渡すと、指定した座標に土ブロックを表示してくれます。
+
+## 最後に
+今回はどうやってブロックを描画するのかまでを書きました。次回は今ある当たり判定の不自然さを直して、ブロックをバリエーションを増やしてそれっぽくしていこうと思います。
