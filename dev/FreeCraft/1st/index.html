@@ -7,25 +7,18 @@ edition = &quot;2021&quot;
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-fyrox = &quot;0.24.0&quot;</code></pre><p>そしてとりあえず<code>cargo build</code>するわけなんですが、多分一発では通りません（通ったら運が良いと思います）。</p><p>まずはここで出るコンパイルエラー達をさばきましょう(申し訳ないんですが、ここはあんまり記録撮ってないので記憶で書きます)。</p><h3 id="alsaに関するエラー"><a class="docs-heading-anchor" href="#alsaに関するエラー">alsaに関するエラー</a><a id="alsaに関するエラー-1"></a><a class="docs-heading-anchor-permalink" href="#alsaに関するエラー" title="Permalink"></a></h3><p>筆者はこれでまず一回コンパイルが止まったんですがalsaなるパッケージがないよ、みたいなエラーで止まる症状が出ることがあります。 これは冷静にalsaをaptで入れてやりましょう。</p><h3 id="error:-linking-with-cc-failed:-exit-code:-1"><a class="docs-heading-anchor" href="#error:-linking-with-cc-failed:-exit-code:-1">error: linking with cc failed: exit code: 1</a><a id="error:-linking-with-cc-failed:-exit-code:-1-1"></a><a class="docs-heading-anchor-permalink" href="#error:-linking-with-cc-failed:-exit-code:-1" title="Permalink"></a></h3><p>こいつはなんか大量のエラーが図れるので気が滅入りますが、こういうとてつもないエラーは最後が肝心。 1つ目のnoteを無視して、2つ目のnoteを見てみると<code>cannot find ~</code>みたいに書いてあると思います。この<code>~</code>の部分の頭は代替<code>l</code>で始まってるんですが、この<code>l</code>のあとを<code>apt list | grep ~</code>して、<code>dev</code>ってついてる物を見つけてインストールしてやりましょう。</p><p>多分ここまででRG3Dのコンパイルが通るとこまでは行ったと思います。次はとりあえず3D描画します。</p><h2 id="Hello-World"><a class="docs-heading-anchor" href="#Hello-World">Hello World</a><a id="Hello-World-1"></a><a class="docs-heading-anchor-permalink" href="#Hello-World" title="Permalink"></a></h2><p>じゃあRG3Dの使い方を説明しよう！ってことになるんですが、結構コードが長くてコードとともに解説するのは難しいので、大体の説明は<a href="https://fyrox-book.github.io/fyrox/tutorials/fps/tutorial-1/tutorial-part-1.html">公式チュートリアル</a>を見てもらうことにして、補足的な説明をします。</p><h3 id="ブロックを表示したい"><a class="docs-heading-anchor" href="#ブロックを表示したい">ブロックを表示したい</a><a id="ブロックを表示したい-1"></a><a class="docs-heading-anchor-permalink" href="#ブロックを表示したい" title="Permalink"></a></h3><p>ブロックを表示するのには、このチュートリアルで紹介されている3Dモデルを作成して使う方法は不便です。 チュートリアルに書いてある方法でいう「手続き型のメッシュ」を作成します（3Dモデルはプログラム上で指定するものを静的にファイルに記述していることになる）。 ただし、注意点があります。チュートリアル通りにメッシュを作成しただけではブロックを自分が透過してしまいます。これを解決するには、ブロックのメッシュに<code>Collider</code>と呼ばれるものを設定する必要があります。これにより、メッシュに当たり判定が作られ、近づくと、カメラの<code>Collider</code>とぶつかって透過しなくなります。 また、マイクラでは重力に従うブロックと従わないブロックがありますが、<code>RigidBody</code>にはデフォルトで重力などが働くため、外部からの力によって動かないように<code>RigidBodyType</code>として<code>Static</code>を指定してやる必要があります。</p><p>ここまでの内容を考慮して、以下のような関数を作りました。</p><pre><code class="nohighlight hljs">fn create_procedural_mesh(
+fyrox = &quot;0.24.0&quot;</code></pre><p>そしてとりあえず<code>cargo build</code>するわけなんですが、多分一発では通りません（通ったら運が良いと思います）。</p><p>まずはここで出るコンパイルエラー達をさばきましょう(申し訳ないんですが、ここはあんまり記録撮ってないので記憶で書きます)。</p><h3 id="alsaに関するエラー"><a class="docs-heading-anchor" href="#alsaに関するエラー">alsaに関するエラー</a><a id="alsaに関するエラー-1"></a><a class="docs-heading-anchor-permalink" href="#alsaに関するエラー" title="Permalink"></a></h3><p>筆者はこれでまず一回コンパイルが止まったんですがalsaなるパッケージがないよ、みたいなエラーで止まる症状が出ることがあります。 これは冷静にalsaをaptで入れてやりましょう。</p><h3 id="error:-linking-with-cc-failed:-exit-code:-1"><a class="docs-heading-anchor" href="#error:-linking-with-cc-failed:-exit-code:-1">error: linking with cc failed: exit code: 1</a><a id="error:-linking-with-cc-failed:-exit-code:-1-1"></a><a class="docs-heading-anchor-permalink" href="#error:-linking-with-cc-failed:-exit-code:-1" title="Permalink"></a></h3><p>こいつはなんか大量のエラーが図れるので気が滅入りますが、こういうとてつもないエラーは最後が肝心。 1つ目のnoteを無視して、2つ目のnoteを見てみると<code>cannot find ~</code>みたいに書いてあると思います。この<code>~</code>の部分の頭は代替<code>l</code>で始まってるんですが、この<code>l</code>のあとを<code>apt list | grep ~</code>して、<code>dev</code>ってついてる物を見つけてインストールしてやりましょう。</p><p>多分ここまででRG3Dのコンパイルが通るとこまでは行ったと思います。次はとりあえず3D描画します。</p><h2 id="Hello-World"><a class="docs-heading-anchor" href="#Hello-World">Hello World</a><a id="Hello-World-1"></a><a class="docs-heading-anchor-permalink" href="#Hello-World" title="Permalink"></a></h2><p>じゃあRG3Dの使い方を説明しよう！ってことになるんですが、結構コードが長くてコードとともに解説するのは難しいので、大体の説明は<a href="https://fyrox-book.github.io/fyrox/tutorials/fps/tutorial-1/tutorial-part-1.html">公式チュートリアル</a>を見てもらうことにして、補足的な説明をします。</p><h3 id="ブロックを表示したい"><a class="docs-heading-anchor" href="#ブロックを表示したい">ブロックを表示したい</a><a id="ブロックを表示したい-1"></a><a class="docs-heading-anchor-permalink" href="#ブロックを表示したい" title="Permalink"></a></h3><p>ブロックを表示するのには、手続き型（プログラムで記述する）方法と3Dモデルをロードする方法があります。最初は手続き型の方が何かと便利だと思っていたのですが、やってみると各面に異なるテクスチャを貼ることができないようなんです。あと、3Dモデルの方が何かと編集するのとかが便利なので、3Dモデルを予めBlenderで作っておいて、それをロードするようにします。 ここで注意点があります、チュートリアル通りにメッシュを作成しただけではブロックを自分が透過してしまいます。これを解決するには、ブロックのメッシュに<code>Collider</code>と呼ばれるものを設定する必要があります。これにより、メッシュに当たり判定が作られ、近づくと、カメラの<code>Collider</code>とぶつかって透過しなくなります。 また、マイクラでは重力に従うブロックと従わないブロックがありますが、<code>RigidBody</code>にはデフォルトで重力などが働くため、外部からの力によって動かないように<code>RigidBodyType</code>として<code>Static</code>を指定してやる必要があります。</p><p>ここまでの内容を考慮して、以下のような関数を作りました。</p><pre><code class="nohighlight hljs">async fn load_model_to_scene(
     scene: &amp;mut Scene,
+    path: &amp;str,
     resource_manager: &amp;ResourceManager,
     position: (f32, f32, f32)
 ) -&gt; Handle&lt;Node&gt; {
-    let mut material = Material::standard();
+    // Request model resource and block until it loading. 
+    let model_resource =
+        resource_manager.request_model(Path::new(&amp;path))
+            .await
+            .unwrap();
 
-    // Material is completely optional, but here we&#39;ll demonstrate that it is possible to
-    // create procedural meshes with any material you want.
-    material
-        .set_property(
-            &amp;ImmutableString::new(&quot;diffuseTexture&quot;),
-            PropertyValue::Sampler {
-                value: Some(resource_manager.request_texture(&quot;assets/dirt.png&quot;)),
-                fallback: SamplerFallback::White,
-            },
-        )
-        .unwrap();
-    
     RigidBodyBuilder::new(
         BaseBuilder::new()
             .with_local_transform(
@@ -35,29 +28,12 @@ fyrox = &quot;0.24.0&quot;</code></pre><p>そしてとりあえず<code>cargo bu
                     .build(),
             )
             .with_children(&amp;[
-                {
-                    MeshBuilder::new(
-                        BaseBuilder::new().with_local_transform(
-                            TransformBuilder::new()
-                                .with_local_position(Vector3::new(0.0, 0.0, 0.0))
-                                .build(),
-                        ),
-                    )
-                    .with_surfaces(vec![SurfaceBuilder::new(Arc::new(Mutex::new(
-                        // Our procedural mesh will have a form of squashed cube.
-                        // A mesh can have unlimited amount of surfaces.
-                        SurfaceData::make_cube(Matrix4::new_nonuniform_scaling(&amp;Vector3::new(
-                            0.5, 0.5, 0.5
-                        ))),
-                    )))
-                        .with_material(Arc::new(Mutex::new(material)))
-                        .build()])
-                    .build(&amp;mut scene.graph)
-                },
+                // Create an instance of the resource in the scene. 
+                model_resource.instantiate_geometry(scene),
                 // Add capsule collider for the rigid body.
                 ColliderBuilder::new(BaseBuilder::new())
                     .with_shape(ColliderShape::cuboid(0.25, 0.25, 0.25))
-                    .build(&amp;mut scene.graph),
+                    .build(&amp;mut scene.graph)
             ]),
     )
     // We don&#39;t want the player to tilt.
@@ -75,4 +51,4 @@ fyrox = &quot;0.24.0&quot;</code></pre><p>そしてとりあえず<code>cargo bu
     anisotropy: 8.0,
     compression: NoCompression,    
 )</code></pre><p>このうち、</p><pre><code class="nohighlight hljs">minification_filter: Nearest,
-magnification_filter: Nearest,</code></pre><p>が重要です。これによりテクスチャを読み込むときに勝手に修正してくれます。</p><h2 id="最後に"><a class="docs-heading-anchor" href="#最後に">最後に</a><a id="最後に-1"></a><a class="docs-heading-anchor-permalink" href="#最後に" title="Permalink"></a></h2><p>今回はどうやってブロックを描画するのかまでを書きました。次回は今ある当たり判定の不自然さを直して、ブロックをバリエーションを増やしてそれっぽくしていこうと思います。</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« 最初に</a><a class="docs-footer-nextpage" href="../../HorseOS/">HorseOSとは »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.15 on <span class="colophon-date" title="Sunday 27 March 2022 13:40">Sunday 27 March 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+magnification_filter: Nearest,</code></pre><p>が重要です。これによりテクスチャを読み込むときに勝手に修正してくれます。</p><h2 id="最後に"><a class="docs-heading-anchor" href="#最後に">最後に</a><a id="最後に-1"></a><a class="docs-heading-anchor-permalink" href="#最後に" title="Permalink"></a></h2><p>今回はどうやってブロックを描画するのかまでを書きました。次回は今ある当たり判定の不自然さを直して、ブロックをバリエーションを増やしてそれっぽくしていこうと思います。</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« 最初に</a><a class="docs-footer-nextpage" href="../../HorseOS/">HorseOSとは »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.15 on <span class="colophon-date" title="Sunday 27 March 2022 13:42">Sunday 27 March 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
