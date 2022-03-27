@@ -39,32 +39,24 @@ fyrox = "0.24.0"
 じゃあRG3Dの使い方を説明しよう！ってことになるんですが、結構コードが長くてコードとともに解説するのは難しいので、大体の説明は[公式チュートリアル](https://fyrox-book.github.io/fyrox/tutorials/fps/tutorial-1/tutorial-part-1.html)を見てもらうことにして、補足的な説明をします。
 
 ### ブロックを表示したい
-ブロックを表示するのには、このチュートリアルで紹介されている3Dモデルを作成して使う方法は不便です。
-チュートリアルに書いてある方法でいう「手続き型のメッシュ」を作成します（3Dモデルはプログラム上で指定するものを静的にファイルに記述していることになる）。
-ただし、注意点があります。チュートリアル通りにメッシュを作成しただけではブロックを自分が透過してしまいます。これを解決するには、ブロックのメッシュに`Collider`と呼ばれるものを設定する必要があります。これにより、メッシュに当たり判定が作られ、近づくと、カメラの`Collider`とぶつかって透過しなくなります。
+ブロックを表示するのには、手続き型（プログラムで記述する）方法と3Dモデルをロードする方法があります。最初は手続き型の方が何かと便利だと思っていたのですが、やってみると各面に異なるテクスチャを貼ることができないようなんです。あと、3Dモデルの方が何かと編集するのとかが便利なので、3Dモデルを予めBlenderで作っておいて、それをロードするようにします。
+ここで注意点があります、チュートリアル通りにメッシュを作成しただけではブロックを自分が透過してしまいます。これを解決するには、ブロックのメッシュに`Collider`と呼ばれるものを設定する必要があります。これにより、メッシュに当たり判定が作られ、近づくと、カメラの`Collider`とぶつかって透過しなくなります。
 また、マイクラでは重力に従うブロックと従わないブロックがありますが、`RigidBody`にはデフォルトで重力などが働くため、外部からの力によって動かないように`RigidBodyType`として`Static`を指定してやる必要があります。
 
 ここまでの内容を考慮して、以下のような関数を作りました。
 ```
-fn create_procedural_mesh(
+async fn load_model_to_scene(
     scene: &mut Scene,
+    path: &str,
     resource_manager: &ResourceManager,
     position: (f32, f32, f32)
 ) -> Handle<Node> {
-    let mut material = Material::standard();
+    // Request model resource and block until it loading. 
+    let model_resource =
+        resource_manager.request_model(Path::new(&path))
+            .await
+            .unwrap();
 
-    // Material is completely optional, but here we'll demonstrate that it is possible to
-    // create procedural meshes with any material you want.
-    material
-        .set_property(
-            &ImmutableString::new("diffuseTexture"),
-            PropertyValue::Sampler {
-                value: Some(resource_manager.request_texture("assets/dirt.png")),
-                fallback: SamplerFallback::White,
-            },
-        )
-        .unwrap();
-    
     RigidBodyBuilder::new(
         BaseBuilder::new()
             .with_local_transform(
@@ -74,29 +66,12 @@ fn create_procedural_mesh(
                     .build(),
             )
             .with_children(&[
-                {
-                    MeshBuilder::new(
-                        BaseBuilder::new().with_local_transform(
-                            TransformBuilder::new()
-                                .with_local_position(Vector3::new(0.0, 0.0, 0.0))
-                                .build(),
-                        ),
-                    )
-                    .with_surfaces(vec![SurfaceBuilder::new(Arc::new(Mutex::new(
-                        // Our procedural mesh will have a form of squashed cube.
-                        // A mesh can have unlimited amount of surfaces.
-                        SurfaceData::make_cube(Matrix4::new_nonuniform_scaling(&Vector3::new(
-                            0.5, 0.5, 0.5
-                        ))),
-                    )))
-                        .with_material(Arc::new(Mutex::new(material)))
-                        .build()])
-                    .build(&mut scene.graph)
-                },
+                // Create an instance of the resource in the scene. 
+                model_resource.instantiate_geometry(scene),
                 // Add capsule collider for the rigid body.
                 ColliderBuilder::new(BaseBuilder::new())
                     .with_shape(ColliderShape::cuboid(0.25, 0.25, 0.25))
-                    .build(&mut scene.graph),
+                    .build(&mut scene.graph)
             ]),
     )
     // We don't want the player to tilt.
