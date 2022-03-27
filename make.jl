@@ -4,6 +4,9 @@ makedocs(;
     sitename="HorseBlog",
     pages = [
         "Home" => "index.md",
+        "MachineLearning" => [
+            "HDBSCAN" => "MachineLearning/HDBSCAN.md"
+        ]
         "FreeCraft" => [
             "最初に" => "FreeCraft/index.md",
             "1回目" => "FreeCraft/1st.md"
