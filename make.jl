@@ -10,7 +10,7 @@ makedocs(;
         "AGI" => [
             "AGIについて"　=> "AGI/index.md",
             "大脳皮質" => "AGI/CorticalColumn.md"
-        ]
+        ],
         "FreeCraft" => [
             "最初に" => "FreeCraft/index.md",
             "1回目" => "FreeCraft/1st.md"
